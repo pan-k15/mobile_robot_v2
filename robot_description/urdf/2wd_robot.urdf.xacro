@@ -1,13 +1,69 @@
 <?xml version="1.0" ?>
+<robot name="robot_1" xmlns:xacro="http://ros.org/wiki/xacro">
 
-<robot name="robot_1">
-  <!-- <xacro:property name="base_mesh_file" value="file://$(find robot_description)/meshes/base.dae" /> -->
-  <!-- <xacro:property name="wheel_mesh_file" value="file://$(find robot_description)/meshes/tire.dae" /> -->
+  <!-- ===== Properties ===== -->
+  <xacro:property name="wheel_mass"   value="0.1"/>
+  <xacro:property name="wheel_radius" value="0.045"/>
+  <xacro:property name="wheel_length" value="0.05"/>
+  <!-- Correct solid-cylinder inertia: axis along Y (after visual rpy="pi/2 0 0") -->
+  <xacro:property name="wheel_iperp"
+    value="${(wheel_mass/12.0)*(3.0*wheel_radius**2 + wheel_length**2)}"/>
+  <xacro:property name="wheel_ispin"
+    value="${(wheel_mass/2.0)*wheel_radius**2}"/>
+
+  <!-- ===== Wheel macro ===== -->
+  <xacro:macro name="wheel" params="name y_offset">
+    <link name="${name}_wheel_link">
+      <visual>
+        <origin rpy="1.5707963267948966 0 0" xyz="0 0 0"/>
+        <geometry>
+          <cylinder length="${wheel_length}" radius="${wheel_radius}"/>
+        </geometry>
+        <material name="blue">
+          <color rgba="0.1764 0.4588 0.8509 1.0"/>
+        </material>
+      </visual>
+      <collision>
+        <origin rpy="1.5707963267948966 0 0" xyz="0 0 0"/>
+        <geometry>
+          <cylinder length="${wheel_length}" radius="${wheel_radius}"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <mass value="${wheel_mass}"/>
+        <!-- ixx=izz = perpendicular axes; iyy = spin axis -->
+        <inertia ixx="${wheel_iperp}" ixy="0" ixz="0"
+                 iyy="${wheel_ispin}" iyz="0"
+                 izz="${wheel_iperp}"/>
+      </inertial>
+    </link>
+    <gazebo reference="${name}_wheel_link">
+      <visual>
+        <material>
+          <ambient>0.1764 0.4588 0.8509 1.0</ambient>
+          <diffuse>0.1764 0.4588 0.8509 1.0</diffuse>
+          <specular>0.1764 0.4588 0.8509 1.0</specular>
+          <emissive>0.0 0.0 0.0 0.0</emissive>
+        </material>
+      </visual>
+    </gazebo>
+    <joint name="${name}_wheel_joint" type="continuous">
+      <axis xyz="0 1 0"/>
+      <parent link="base_link"/>
+      <child link="${name}_wheel_link"/>
+      <origin rpy="0 0 0" xyz="-0.1 ${y_offset} -0.1"/>
+    </joint>
+  </xacro:macro>
+
+  <!-- ===== Gazebo sensor plugin ===== -->
   <gazebo>
     <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
       <render_engine>ogre2</render_engine>
     </plugin>
   </gazebo>
+
+  <!-- ===== Base ===== -->
   <link name="base_footprint"/>
   <link name="base_link">
     <visual>
@@ -28,7 +84,9 @@
     <inertial>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <mass value="1"/>
-      <inertia ixx="0.008177083333333335" ixy="0.0" ixz="0.0" iyy="0.012083333333333331" iyz="0.0" izz="0.016510416666666666"/>
+      <inertia ixx="0.008177083333333335" ixy="0.0" ixz="0.0"
+               iyy="0.012083333333333331" iyz="0.0"
+               izz="0.016510416666666666"/>
     </inertial>
   </link>
   <gazebo reference="base_link">
@@ -44,89 +102,19 @@
   <joint name="base_to_footprint" type="fixed">
     <parent link="base_footprint"/>
     <child link="base_link"/>
-    <origin rpy="0 0 0" xyz="0 0 0.14500000000000002"/>
+    <origin rpy="0 0 0" xyz="0 0 0.145"/>
   </joint>
-  <link name="left_wheel_link">
-    <visual>
-      <origin rpy="1.5707963267948966 0 0" xyz="0 0 0"/>
-      <geometry>
-        <cylinder length="0.05" radius="0.045"/>
-      </geometry>
-      <material name="blue">
-        <color rgba="0.1764 0.4588 0.8509 1.0"/>
-      </material>
-    </visual>
-    <collision>
-      <origin rpy="1.5707963267948966 0 0" xyz="0 0 0"/>
-      <geometry>
-        <cylinder length="0.05" radius="0.045"/>
-      </geometry>
-    </collision>
-    <inertial>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <mass value="0.1"/>
-      <inertia ixx="8.100000000000002e-05" ixy="0" ixz="0" iyy="8.100000000000002e-05" iyz="0" izz="8.100000000000002e-05"/>
-    </inertial>
-  </link>
-  <gazebo reference="left_wheel_link">
-    <visual>
-      <material>
-        <ambient>0.1764 0.4588 0.8509 1.0</ambient>
-        <diffuse>0.1764 0.4588 0.8509 1.0</diffuse>
-        <specular>0.1764 0.4588 0.8509 1.0</specular>
-        <emissive>0.0 0.0 0.0 0.0</emissive>
-      </material>
-    </visual>
-  </gazebo>
-  <joint name="left_wheel_joint" type="continuous">
-    <axis xyz="0 1 0"/>
-    <parent link="base_link"/>
-    <child link="left_wheel_link"/>
-    <origin rpy="0 0 0" xyz="-0.1 0.14 -0.1"/>
-  </joint>
-  <link name="right_wheel_link">
-    <visual>
-      <origin rpy="1.5707963267948966 0 0" xyz="0 0 0"/>
-      <geometry>
-        <cylinder length="0.05" radius="0.045"/>
-      </geometry>
-      <material name="blue">
-        <color rgba="0.1764 0.4588 0.8509 1.0"/>
-      </material>
-    </visual>
-    <collision>
-      <origin rpy="1.5707963267948966 0 0" xyz="0 0 0"/>
-      <geometry>
-        <cylinder length="0.05" radius="0.045"/>
-      </geometry>
-    </collision>
-    <inertial>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <mass value="0.1"/>
-      <inertia ixx="8.100000000000002e-05" ixy="0" ixz="0" iyy="8.100000000000002e-05" iyz="0" izz="8.100000000000002e-05"/>
-    </inertial>
-  </link>
-  <gazebo reference="right_wheel_link">
-    <visual>
-      <material>
-        <ambient>0.1764 0.4588 0.8509 1.0</ambient>
-        <diffuse>0.1764 0.4588 0.8509 1.0</diffuse>
-        <specular>0.1764 0.4588 0.8509 1.0</specular>
-        <emissive>0.0 0.0 0.0 0.0</emissive>
-      </material>
-    </visual>
-  </gazebo>
-  <joint name="right_wheel_joint" type="continuous">
-    <axis xyz="0 1 0"/>
-    <parent link="base_link"/>
-    <child link="right_wheel_link"/>
-    <origin rpy="0 0 0" xyz="-0.1 -0.14 -0.1"/>
-  </joint>
+
+  <!-- ===== Wheels (via macro) ===== -->
+  <xacro:wheel name="left"  y_offset=" 0.14"/>
+  <xacro:wheel name="right" y_offset="-0.14"/>
+
+  <!-- ===== Front caster ===== -->
   <link name="front_caster_wheel_link">
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <sphere radius="0.07250000000000001"/>
+        <sphere radius="0.0725"/>
       </geometry>
       <material name="black">
         <color rgba="0.0 0.0 0.0 1.0"/>
@@ -135,13 +123,15 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <sphere radius="0.07250000000000001"/>
+        <sphere radius="0.0725"/>
       </geometry>
     </collision>
     <inertial>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <mass value="0.01"/>
-      <inertia ixx="2.1025000000000006e-05" ixy="0" ixz="0" iyy="2.1025000000000006e-05" iyz="0" izz="2.1025000000000006e-05"/>
+      <inertia ixx="2.10125e-05" ixy="0" ixz="0"
+               iyy="2.10125e-05" iyz="0"
+               izz="2.10125e-05"/>
     </inertial>
   </link>
   <gazebo reference="front_caster_wheel_link">
@@ -151,9 +141,10 @@
   <joint name="front_caster_wheel_joint" type="fixed">
     <parent link="base_link"/>
     <child link="front_caster_wheel_link"/>
-    <origin rpy="0 0 0" xyz="0.10249999999999998 0 -0.07250000000000001"/>
+    <origin rpy="0 0 0" xyz="0.1025 0 -0.0725"/>
   </joint>
 
+  <!-- ===== IMU ===== -->
   <link name="imu_link"/>
   <joint name="imu_to_base_link" type="fixed">
     <parent link="base_link"/>
@@ -161,18 +152,19 @@
     <origin rpy="0 0 0" xyz="0 0 0"/>
   </joint>
   <gazebo>
-    <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu">
-      </plugin>
+    <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu"/>
   </gazebo>
   <gazebo reference="imu_link">
     <sensor name="imu_sensor" type="imu">
       <topic>imu/data</topic>
       <gz_frame_id>imu_link</gz_frame_id>
-      <update_rate>5</update_rate>
+      <update_rate>50</update_rate>
       <always_on>true</always_on>
       <visualize>true</visualize>
     </sensor>
   </gazebo>
+
+  <!-- ===== LiDAR ===== -->
   <link name="laser">
     <visual>
       <origin rpy="0 0 0" xyz="0 0 -0.025"/>
@@ -192,7 +184,9 @@
     <inertial>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <mass value="0.1"/>
-      <inertia ixx="5.625000000000001e-05" ixy="0" ixz="0" iyy="5.625000000000001e-05" iyz="0" izz="5.625000000000001e-05"/>
+      <inertia ixx="5.625e-05" ixy="0" ixz="0"
+               iyy="5.625e-05" iyz="0"
+               izz="5.625e-05"/>
     </inertial>
   </link>
   <gazebo reference="laser">
@@ -204,13 +198,6 @@
         <emissive>0.0 0.0 0.0 0.0</emissive>
       </material>
     </visual>
-  </gazebo>
-  <joint name="laser_to_base_link" type="fixed">
-    <parent link="base_link"/>
-    <child link="laser"/>
-    <origin rpy="0 0 0" xyz="0.0 0 0.12"/>
-  </joint>
-  <gazebo reference="laser">
     <sensor name="gpu_lidar" type="gpu_lidar">
       <topic>scan</topic>
       <gz_frame_id>laser</gz_frame_id>
@@ -240,12 +227,18 @@
       </lidar>
     </sensor>
   </gazebo>
+  <joint name="laser_to_base_link" type="fixed">
+    <parent link="base_link"/>
+    <child link="laser"/>
+    <origin rpy="0 0 0" xyz="0.0 0 0.12"/>
+  </joint>
+
+  <!-- ===== RGBD Camera ===== -->
   <link name="camera_link">
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
         <box size="0.030 0.124 0.030"/>
-        <!-- <mesh filename="" scale="0.001 0.001 0.001"/> -->
       </geometry>
       <material name="red">
         <color rgba="0.416 0.051 0.047 1.0"/>
@@ -260,7 +253,9 @@
     <inertial>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <mass value="0.135"/>
-      <inertia ixx="0.00018310499999999998" ixy="0.0" ixz="0.0" iyy="2.0249999999999998e-05" iyz="0.0" izz="0.00018310499999999998"/>
+      <inertia ixx="0.000183105" ixy="0.0" ixz="0.0"
+               iyy="2.0250e-05"  iyz="0.0"
+               izz="0.000183105"/>
     </inertial>
   </link>
   <gazebo reference="camera_link">
@@ -272,21 +267,6 @@
         <emissive>0.416 0.051 0.047 1.0</emissive>
       </material>
     </visual>
-  </gazebo>
-
-    
-  <joint name="camera_to_base_link" type="fixed">
-    <parent link="base_link"/>
-    <child link="camera_link"/>
-    <origin rpy="0 0 0" xyz="0.175 0.0 0.045"/>
-  </joint>
-  <link name="camera_depth_link"/>
-  <joint name="camera_depth_joint" type="fixed">
-    <origin rpy="0 0 0" xyz="0 0 0"/>
-    <parent link="camera_link"/>
-    <child link="camera_depth_link"/>
-  </joint>
-  <gazebo reference="camera_link">
     <sensor name="camera" type="rgbd_camera">
       <topic>camera</topic>
       <gz_frame_id>camera_link</gz_frame_id>
@@ -308,27 +288,43 @@
       </camera>
     </sensor>
   </gazebo>
+  <joint name="camera_to_base_link" type="fixed">
+    <parent link="base_link"/>
+    <child link="camera_link"/>
+    <origin rpy="0 0 0" xyz="0.175 0.0 0.045"/>
+  </joint>
+  <link name="camera_depth_link"/>
+  <joint name="camera_depth_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <parent link="camera_link"/>
+    <child link="camera_depth_link"/>
+  </joint>
+
+  <!-- ===== Differential drive plugin ===== -->
   <gazebo>
     <plugin filename="gz-sim-diff-drive-system" name="gz::sim::systems::DiffDrive">
       <topic>cmd_vel</topic>
       <frame_id>odom</frame_id>
       <child_frame_id>base_footprint</child_frame_id>
       <odom_topic>odom/unfiltered</odom_topic>
-      <!-- <tf_topic>/tf</tf_topic> -->
       <left_joint>left_wheel_joint</left_joint>
       <right_joint>right_wheel_joint</right_joint>
       <wheel_separation>0.28</wheel_separation>
-      <wheel_radius>0.045</wheel_radius>
+      <wheel_radius>${wheel_radius}</wheel_radius>
       <odom_publish_frequency>50</odom_publish_frequency>
       <tf_topic>/tf</tf_topic>
     </plugin>
   </gazebo>
+
+  <!-- ===== Joint state publisher plugin ===== -->
   <gazebo>
-    <plugin filename="gz-sim-joint-state-publisher-system" name="gz::sim::systems::JointStatePublisher">
+    <plugin filename="gz-sim-joint-state-publisher-system"
+            name="gz::sim::systems::JointStatePublisher">
       <topic>joint_states</topic>
       <update_rate>30</update_rate>
       <joint_name>left_wheel_joint</joint_name>
       <joint_name>right_wheel_joint</joint_name>
     </plugin>
   </gazebo>
+
 </robot>
