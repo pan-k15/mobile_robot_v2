@@ -47,7 +47,7 @@ ros2 launch robot_simulation teleop.launch.py
 ros2 run nav2_map_server map_saver_cli -f ~/map
 ```
 
-**5. Navigation
+**6. Navigation
 ```bash
 ros2 launch slam_pkg navigation.launch.py
 ```
