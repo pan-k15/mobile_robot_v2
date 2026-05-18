@@ -20,24 +20,11 @@ colcon build --symlink-install
 source install/setup.bash
 ```
 
-### Option A — All-in-one bringup (recommended)
-```bash
-# SLAM mode: drive around to build a map
-ros2 launch slam_pkg nav_bringup.launch.py mode:=slam world:=warehouse
-
-# Navigation mode: navigate with the saved map
-ros2 launch slam_pkg nav_bringup.launch.py mode:=nav world:=warehouse
-
-# EKF sensor fusion (needs robot_localization installed)
-ros2 launch slam_pkg nav_bringup.launch.py mode:=slam use_ekf:=true
-```
-
-### Option B — Manual (step by step)
-
+## How to run
 **1. Simulation**
 ```bash
 # Choose a world: simple | warehouse | empty_warehouse
-ros2 launch robot_simulation simulation.launch.py world:=warehouse
+ros2 launch robot_simulation simulation.launch.py
 ```
 
 **2. SLAM (mapping)**
@@ -58,6 +45,11 @@ ros2 launch robot_simulation teleop.launch.py
 **5. Save map** (after SLAM)
 ```bash
 ros2 run nav2_map_server map_saver_cli -f ~/map
+```
+
+**5. Navigation
+```bash
+ros2 launch slam_pkg navigation.launch.py
 ```
 
 ## Robot sensors
